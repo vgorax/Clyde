@@ -515,6 +515,15 @@
     }
   } catch (e) { /* not on a TV */ }
 
+  // Keep the TV's own screensaver from covering the display (installed app only).
+  function keepAwake() {
+    try {
+      window.webapis.appcommon.setScreenSaver(window.webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
+    } catch (e) { /* not available in the browser */ }
+  }
+  keepAwake();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) keepAwake(); });
+
   document.addEventListener('keydown', function (ev) {
     var k = ev.keyCode;
     var handled = true;
