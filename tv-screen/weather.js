@@ -147,6 +147,8 @@
   }
 
   function render(w) {
+    // Share the current conditions so the scenes can show rain, snow, fog, etc.
+    window.AmbientWeather = (w && w.current) ? { code: w.current.weather_code, isDay: w.current.is_day === 1 } : null;
     if (!w || !w.current) { elBox.innerHTML = ''; return; }
     var cur = describe(w.current.weather_code, w.current.is_day === 1);
     var d = w.daily;

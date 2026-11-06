@@ -9,6 +9,16 @@ libraries, so it runs in 2015–2017 TV browsers. Only the weather needs interne
 **Weather:** current conditions, today's high/low and a 3-day forecast, from
 [Open-Meteo](https://open-meteo.com) (free, no account or API key).
 
+**Live weather effects:** every scene follows the real weather — rain streaks when it's
+raining, falling snow, drifting fog, grey clouds when it's overcast, and lightning flashes
+during thunderstorms. Add `?sky=rain` (or `snow`, `storm`, `fog`, `cloudy`, `clear`) to the
+page address to preview one.
+
+**Streaming apps:** press Blue for a row of Netflix, Hulu, Prime Video, Disney+ and
+YouTube tiles. Apps that aren't installed on the TV are greyed out. This only works when
+Ambient TV is installed as an app; the TV browser isn't allowed to open other apps.
+To add or remove apps, edit the `APPS` list at the top of `launcher.js`.
+
 ## Remote controls
 
 | Button | Does |
@@ -19,9 +29,11 @@ libraries, so it runs in 2015–2017 TV browsers. Only the weather needs interne
 | 🔴 Red | Auto-cycle scenes every 10 minutes |
 | 🟢 Green | 12 / 24-hour clock |
 | 🟡 Yellow | Animation speed (normal → faster → slower) |
-| 🔵 Blue | Show the button guide |
+| 🔵 Blue | Streaming apps (◀ ▶ choose, OK open, Blue/Back close) |
+| 0 | Live weather effects on / off |
+| INFO | Show the button guide |
 
-On a computer, use the arrow keys, Enter, and R / G / Y / B. Your settings are remembered.
+On a computer, use the arrow keys, Enter, R / G / Y / B, 0 and H. Your settings are remembered.
 The clock shifts a few pixels each minute so it doesn't burn into the screen.
 
 ## Weather location

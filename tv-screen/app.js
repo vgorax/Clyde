@@ -411,6 +411,139 @@
     };
   })());
 
+
+  // ---------- live weather effects (drawn on top of any scene) ----------
+  // Reads window.AmbientWeather (set by weather.js). Add ?sky=rain|snow|storm|fog|cloudy
+  // to the page address to preview an effect.
+  var SKY_TEST = { clear: 0, partly: 2, cloudy: 3, fog: 45, drizzle: 53, rain: 63, snow: 73, storm: 95 };
+  var skyParam = /[?&]sky=([a-z]+)/.exec(window.location.search);
+  var skyForced = skyParam && SKY_TEST.hasOwnProperty(skyParam[1]) ? SKY_TEST[skyParam[1]] : null;
+
+  var skyfx = (function () {
+    var drops = [], flakes = [], puffs = [];
+    var flakeImg = null, puffImg = null, fogImg = null;
+    var flash = 0, nextFlash = 4;
+
+    function conditions(code) {
+      var c = { rain: 0, snow: 0, clouds: 0, fog: 0, storm: false };
+      if (code === 2) c.clouds = 0.4;
+      else if (code === 3) c.clouds = 1;
+      else if (code === 45 || code === 48) c.fog = 1;
+      else if (code >= 51 && code <= 57) { c.rain = 0.35; c.clouds = 0.8; }
+      else if (code >= 61 && code <= 67) { c.rain = code >= 65 ? 1 : 0.65; c.clouds = 1; }
+      else if (code >= 80 && code <= 82) { c.rain = code === 82 ? 1 : 0.6; c.clouds = 0.8; }
+      else if ((code >= 71 && code <= 77) || code === 85 || code === 86) { c.snow = code === 75 || code === 86 ? 1 : 0.6; c.clouds = 0.9; }
+      else if (code >= 95) { c.rain = 1; c.clouds = 1; c.storm = true; }
+      return c;
+    }
+
+    function fit(arr, n, make) {
+      while (arr.length < n) arr.push(make(true));
+      if (arr.length > n) arr.length = n;
+    }
+
+    function newDrop(anywhere) {
+      return { x: rand(-0.1, 1.1), y: anywhere ? rand(0, 1) : rand(-0.2, 0), len: rand(0.02, 0.05), sp: rand(1.1, 1.7) };
+    }
+    function newFlake(anywhere) {
+      return { x: rand(0, 1), y: anywhere ? rand(0, 1) : rand(-0.1, 0), sz: rand(3, 9), sp: rand(0.04, 0.1), ph: rand(0, 6.28) };
+    }
+    function newPuff(anywhere) {
+      return { x: anywhere ? rand(-0.2, 1.2) : -0.4, y: rand(0, 0.45), w: rand(0.35, 0.7), sp: rand(0.004, 0.012) };
+    }
+
+    return {
+      draw: function (t, dt) {
+        var code = skyForced !== null ? skyForced : (window.AmbientWeather ? window.AmbientWeather.code : 0);
+        var c = conditions(code);
+        if (!flakeImg) {
+          flakeImg = makeGlow(16, 255, 255, 255);
+          puffImg = makeGlow(128, 120, 128, 140);
+          fogImg = makeGlow(128, 190, 198, 206);
+        }
+
+        // Grey the sky down under heavy cloud.
+        if (c.clouds > 0) {
+          ctx.fillStyle = 'rgba(30,34,42,' + (0.28 * c.clouds) + ')';
+          ctx.fillRect(0, 0, W, H);
+          fit(puffs, Math.round(8 * c.clouds), newPuff);
+          ctx.globalAlpha = 0.35 * c.clouds;
+          for (var i = 0; i < puffs.length; i++) {
+            var p = puffs[i];
+            p.x += p.sp * dt;
+            if (p.x > 1.3) puffs[i] = newPuff(false);
+            ctx.drawImage(puffImg, p.x * W - p.w * W / 2, p.y * H - p.w * H * 0.25, p.w * W, p.w * H * 0.5);
+          }
+          ctx.globalAlpha = 1;
+        } else {
+          puffs.length = 0;
+        }
+
+        // Fog: pale bands drifting low across the screen.
+        if (c.fog > 0) {
+          ctx.fillStyle = 'rgba(150,160,170,0.22)';
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalAlpha = 0.45;
+          for (var f = 0; f < 6; f++) {
+            var fx = ((t * 0.01 * (1 + f * 0.3) + f * 0.37) % 1.6) - 0.3;
+            var fy = 0.45 + f * 0.09;
+            ctx.drawImage(fogImg, fx * W - W * 0.4, fy * H - H * 0.12, W * 0.8, H * 0.24);
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        // Rain: one batched path of slanted streaks.
+        if (c.rain > 0) {
+          fit(drops, Math.round(220 * c.rain), newDrop);
+          ctx.strokeStyle = 'rgba(190,205,230,0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (var d = 0; d < drops.length; d++) {
+            var r = drops[d];
+            r.y += r.sp * dt;
+            r.x -= r.sp * 0.12 * dt;
+            if (r.y > 1.05) drops[d] = r = newDrop(false);
+            ctx.moveTo(r.x * W, r.y * H);
+            ctx.lineTo((r.x + r.len * 0.12) * W, (r.y - r.len) * H);
+          }
+          ctx.stroke();
+        } else {
+          drops.length = 0;
+        }
+
+        // Snow: soft flakes swaying as they fall.
+        if (c.snow > 0) {
+          fit(flakes, Math.round(160 * c.snow), newFlake);
+          ctx.globalAlpha = 0.85;
+          for (var s = 0; s < flakes.length; s++) {
+            var fl = flakes[s];
+            fl.y += fl.sp * dt;
+            var sx = fl.x + Math.sin(t * 0.8 + fl.ph) * 0.015;
+            if (fl.y > 1.02) flakes[s] = fl = newFlake(false);
+            ctx.drawImage(flakeImg, sx * W - fl.sz / 2, fl.y * H - fl.sz / 2, fl.sz, fl.sz);
+          }
+          ctx.globalAlpha = 1;
+        } else {
+          flakes.length = 0;
+        }
+
+        // Thunderstorm: occasional lightning flashes (sometimes a double flicker).
+        if (c.storm) {
+          nextFlash -= dt;
+          if (nextFlash <= 0) {
+            flash = 1;
+            nextFlash = Math.random() < 0.3 ? 0.18 : rand(6, 16);
+          }
+        }
+        if (flash > 0) {
+          ctx.fillStyle = 'rgba(230,235,255,' + (flash * 0.55) + ')';
+          ctx.fillRect(0, 0, W, H);
+          flash = Math.max(0, flash - dt * 4);
+        }
+      }
+    };
+  })();
+
   // ---------- state ----------
   var state = {
     scene: clamp(store.get('scene', 0), 0, scenes.length - 1),
@@ -418,7 +551,8 @@
     overlay: store.get('overlay', 0),    // 0 clock + weather, 1 clock only, 2 nothing
     h24: store.get('h24', false),
     speed: store.get('speed', 1),        // 0.5, 1 or 2
-    cycle: store.get('cycle', false)     // auto-change scene every 10 minutes
+    cycle: store.get('cycle', false),    // auto-change scene every 10 minutes
+    skyfx: store.get('skyfx', true)      // live weather effects on the scenes
   };
   var CYCLE_SECONDS = 600;
   var cycleTimer = 0;
@@ -492,6 +626,8 @@
     toastTimer = setTimeout(function () { elToast.className = ''; }, 2200);
   }
 
+  window.AmbientToast = toast;
+
   var helpTimer = null;
   function showHelp(ms) {
     elHelp.className = 'show';
@@ -510,14 +646,15 @@
   var KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13,
     RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, BACK: 10009,
+    INFO: 457, ZERO: 48,
     // Keyboard equivalents for testing on a computer.
-    R: 82, G: 71, Y: 89, B: 66, SPACE: 32
+    R: 82, G: 71, Y: 89, B: 66, SPACE: 32, H: 72, W: 87
   };
 
   // Installed Tizen apps must ask for the color buttons; in the TV browser this does nothing.
   try {
     if (window.tizen && window.tizen.tvinputdevice) {
-      var names = ['ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue'];
+      var names = ['ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue', 'Info', '0'];
       for (var n = 0; n < names.length; n++) window.tizen.tvinputdevice.registerKey(names[n]);
     }
   } catch (e) { /* not on a TV */ }
@@ -534,6 +671,11 @@
   document.addEventListener('keydown', function (ev) {
     var k = ev.keyCode;
     var handled = true;
+    // While the app launcher is open it gets the remote's buttons.
+    if (window.AmbientLauncher && window.AmbientLauncher.handleKey(k)) {
+      ev.preventDefault();
+      return;
+    }
     switch (k) {
       case KEY.LEFT: setScene(state.scene - 1, true); break;
       case KEY.RIGHT: setScene(state.scene + 1, true); break;
@@ -569,8 +711,16 @@
         toast(state.speed === 1 ? 'Normal speed' : state.speed === 2 ? 'Faster' : 'Slower');
         break;
       case KEY.BLUE: case KEY.B:
+        if (window.AmbientLauncher) window.AmbientLauncher.open();
+        break;
+      case KEY.INFO: case KEY.H:
         showHelp(8000);
         return;
+      case KEY.ZERO: case KEY.W:
+        state.skyfx = !state.skyfx;
+        store.set('skyfx', state.skyfx);
+        toast(state.skyfx ? 'Live weather effects on' : 'Live weather effects off');
+        break;
       case KEY.BACK:
         try { window.tizen.application.getCurrentApplication().exit(); } catch (e2) { handled = false; }
         break;
@@ -600,6 +750,7 @@
     }
 
     current.draw(simTime, dt * state.speed);
+    if (state.skyfx) skyfx.draw(simTime, dt * state.speed);
 
     // If the TV struggles, drop the drawing resolution once.
     frames++;
