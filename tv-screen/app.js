@@ -584,6 +584,7 @@
   var elHelp = document.getElementById('help');
   var elDim = document.getElementById('dim');
   var elWeather = document.getElementById('weather');
+  var elCountdown = document.getElementById('countdown');
 
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -616,6 +617,11 @@
       elWeather.style.webkitTransform = wtr;
       elWeather.style.transform = wtr;
     }
+    if (elCountdown) {
+      var ctr = 'translate(' + (-ox) + 'px,' + (-oy) + 'px)';
+      elCountdown.style.webkitTransform = ctr;
+      elCountdown.style.transform = ctr;
+    }
   }
 
   var toastTimer = null;
@@ -639,6 +645,7 @@
     elDim.style.opacity = state.dim;
     elClock.className = state.overlay < 2 ? '' : 'hidden';
     if (elWeather) elWeather.className = state.overlay === 0 ? '' : 'hidden';
+    if (elCountdown) elCountdown.className = state.overlay === 0 ? '' : 'hidden';
     updateClock();
   }
 
@@ -692,7 +699,7 @@
       case KEY.ENTER: case KEY.SPACE:
         state.overlay = (state.overlay + 1) % 3;
         store.set('overlay', state.overlay);
-        toast(['Clock and weather', 'Clock only', 'Scene only'][state.overlay]);
+        toast(['Clock, weather and countdowns', 'Clock only', 'Scene only'][state.overlay]);
         break;
       case KEY.RED: case KEY.R:
         state.cycle = !state.cycle;

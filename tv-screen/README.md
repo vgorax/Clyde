@@ -25,7 +25,7 @@ To add or remove apps, edit the `APPS` list at the top of `launcher.js`.
 |---|---|
 | ◀ ▶ | Previous / next scene |
 | ▲ ▼ | Brighter / dimmer |
-| OK | Clock + weather → clock only → scene only |
+| OK | Clock, weather & countdowns → clock only → scene only |
 | 🔴 Red | Auto-cycle scenes every 10 minutes |
 | 🟢 Green | 12 / 24-hour clock |
 | 🟡 Yellow | Animation speed (normal → faster → slower) |
@@ -35,6 +35,22 @@ To add or remove apps, edit the `APPS` list at the top of `launcher.js`.
 
 On a computer, use the arrow keys, Enter, R / G / Y / B, 0 and H. Your settings are remembered.
 The clock shifts a few pixels each minute so it doesn't burn into the screen.
+
+## Holiday countdowns
+
+Shows how many days until **Thanksgiving** (US: the fourth Thursday of November) and
+**Christmas**, bottom right. It says "Tomorrow" the day before and "Happy Thanksgiving!" /
+"Merry Christmas!" on the day, then moves on to next year. A countdown only appears when
+it's 100 days away or less.
+
+To add birthdays or other dates, edit the list at the top of `countdown.js`:
+
+```js
+{ name: 'Mom’s birthday', month: 3, day: 14, icon: 'cake' },
+```
+
+Icons: `pumpkin`, `tree`, `heart`, `star`, `cake`. For Canadian Thanksgiving use
+`{ name: 'Thanksgiving', month: 10, nth: 2, weekday: 1, icon: 'pumpkin' }`.
 
 ## Weather location
 
