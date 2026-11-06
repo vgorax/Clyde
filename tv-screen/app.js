@@ -415,7 +415,7 @@
   var state = {
     scene: clamp(store.get('scene', 0), 0, scenes.length - 1),
     dim: store.get('dim', 0),            // 0 (full brightness) .. 0.8
-    showClock: store.get('showClock', true),
+    overlay: store.get('overlay', 0),    // 0 clock + weather, 1 clock only, 2 nothing
     h24: store.get('h24', false),
     speed: store.get('speed', 1),        // 0.5, 1 or 2
     cycle: store.get('cycle', false)     // auto-change scene every 10 minutes
@@ -449,6 +449,7 @@
   var elToast = document.getElementById('toast');
   var elHelp = document.getElementById('help');
   var elDim = document.getElementById('dim');
+  var elWeather = document.getElementById('weather');
 
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -476,6 +477,11 @@
     var tr = 'translate(' + ox + 'px,' + oy + 'px)';
     elClock.style.webkitTransform = tr;
     elClock.style.transform = tr;
+    if (elWeather) {
+      var wtr = 'translate(' + (-ox) + 'px,' + oy + 'px)';
+      elWeather.style.webkitTransform = wtr;
+      elWeather.style.transform = wtr;
+    }
   }
 
   var toastTimer = null;
@@ -495,7 +501,8 @@
 
   function applyState() {
     elDim.style.opacity = state.dim;
-    elClock.className = state.showClock ? '' : 'hidden';
+    elClock.className = state.overlay < 2 ? '' : 'hidden';
+    if (elWeather) elWeather.className = state.overlay === 0 ? '' : 'hidden';
     updateClock();
   }
 
@@ -541,9 +548,9 @@
         toast('Brightness ' + Math.round((1 - state.dim) * 100) + '%');
         break;
       case KEY.ENTER: case KEY.SPACE:
-        state.showClock = !state.showClock;
-        store.set('showClock', state.showClock);
-        toast(state.showClock ? 'Clock on' : 'Clock off');
+        state.overlay = (state.overlay + 1) % 3;
+        store.set('overlay', state.overlay);
+        toast(['Clock and weather', 'Clock only', 'Scene only'][state.overlay]);
         break;
       case KEY.RED: case KEY.R:
         state.cycle = !state.cycle;

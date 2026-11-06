@@ -2,9 +2,12 @@
 
 A full-screen ambient display for an older Samsung (Tizen) TV: animated scenes plus a
 big clock, controlled with the TV remote. Plain HTML, CSS and ES5 JavaScript with no
-libraries and no internet needed, so it runs in 2015–2017 TV browsers.
+libraries, so it runs in 2015–2017 TV browsers. Only the weather needs internet.
 
 **Scenes:** Aurora · Fireflies · Night Sky (with shooting stars) · Lava Lamp · Ocean Sunset
+
+**Weather:** current conditions, today's high/low and a 3-day forecast, from
+[Open-Meteo](https://open-meteo.com) (free, no account or API key).
 
 ## Remote controls
 
@@ -12,7 +15,7 @@ libraries and no internet needed, so it runs in 2015–2017 TV browsers.
 |---|---|
 | ◀ ▶ | Previous / next scene |
 | ▲ ▼ | Brighter / dimmer |
-| OK | Show / hide the clock |
+| OK | Clock + weather → clock only → scene only |
 | 🔴 Red | Auto-cycle scenes every 10 minutes |
 | 🟢 Green | 12 / 24-hour clock |
 | 🟡 Yellow | Animation speed (normal → faster → slower) |
@@ -20,6 +23,21 @@ libraries and no internet needed, so it runs in 2015–2017 TV browsers.
 
 On a computer, use the arrow keys, Enter, and R / G / Y / B. Your settings are remembered.
 The clock shifts a few pixels each minute so it doesn't burn into the screen.
+
+## Weather location
+
+By default it estimates your location from your internet connection. That's usually
+right to within your town, but some internet providers place you in a nearby city. To set it
+exactly, open `weather.js` and change the settings at the top:
+
+```js
+city: 'Portland, Oregon',   // or 'London, GB', 'Austin, Texas', ...
+units: 'auto',              // 'fahrenheit', 'celsius', or auto (°F in the US)
+```
+
+In the TV browser you can also add it to the address instead: `http://192.168.0.XX:8000/?city=Portland,Oregon`.
+Weather refreshes every 30 minutes. If the internet drops, the last forecast stays up for
+6 hours, then the panel hides.
 
 ## Option 1: open it in the TV's web browser (quickest)
 
@@ -55,3 +73,4 @@ The back button exits the app.
 
 Each scene in `app.js` is a small object with `name`, `init()` and `draw(t, dt)`.
 Copy one, change the colors or shapes, and add it to the list; ◀ ▶ will pick it up.
+If you change the files after installing, run **Run As → Tizen Web Application** again to update the TV.
